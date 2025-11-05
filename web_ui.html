@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DeepChess Model Control</title>
+  <style>
+    body { font-family: Inter, system-ui, Arial; padding: 32px; background:#f7f8fa; color:#111; }
+    .card { background:white; border-radius:10px; padding:20px; max-width:720px; margin:0 auto; box-shadow:0 6px 24px rgba(20,20,40,0.06); }
+    h1 { margin:0 0 8px 0; font-size:20px; }
+    p { color:#444; margin:0 0 18px 0; }
+    button { padding:10px 16px; border-radius:8px; border:0; font-weight:600; cursor:pointer; }
+    .btn-download { background:#0b74ff; color:white; }
+    .btn-upload { background:#22c55e; color:white; margin-left:10px; }
+    .status { margin-top:14px; color:#666; font-size:14px; }
+    .small { font-size:13px; color:#888; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>DeepChess — Model Manager</h1>
+    <p>Nhấn <strong>Tải model</strong> để download file model hiện tại từ server. Hoặc nhấn <strong>Upload to HF</strong> để dùng endpoint upload (nếu server hỗ trợ).</p>
+
+    <div>
+      <button id="downloadBtn" class="btn-download">⬇️ Tải model</button>
+      <button id="uploadBtn" class="btn-upload">☁️ Upload lên HuggingFace</button>
+    </div>
+
+    <div class="status" id="status">Trạng thái: chưa thực hiện</div>
+    <div class="small">Ghi chú: nếu bạn bật upload trên server, endpoint phải được bảo vệ (token).</div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    downloadBtn.onclick = async () => {
+      statusEl.textContent = "Trạng thái: đang chuẩn bị tải...";
+      try {
+        // mở trực tiếp đường dẫn download (server trả file attachment)
+        const url = "/download";
+        // Trigger browser download by creating an <a> element
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = ""; // cho server quyết định filename
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        statusEl.textContent = "Trạng thái: Đã gửi yêu cầu tải. Kiểm tra trình duyệt để nhận file.";
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Lỗi khi tải: " + (err.message || err);
+      }
+    };
+
+    uploadBtn.onclick = async () => {
+      statusEl.textContent = "Trạng thái: đang yêu cầu upload...";
+      try {
+        // Gọi endpoint server để upload model lên HF (nếu server hỗ trợ).
+        // Nếu endpoint yêu cầu token, token nên được gắn trên server (env) hoặc bạn có 1 modal nhập token (không khuyến nghị cho public).
+        const resp = await fetch('/upload-hf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ note: 'trigger upload from web UI' })
+        });
+        const j = await resp.json().catch(()=>null);
+        if (resp.ok) {
+          statusEl.textContent = "Upload thành công: " + (j?.message || 'OK');
+        } else {
+          statusEl.textContent = "Upload thất bại: " + (j?.error || resp.statusText);
+        }
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Lỗi khi upload: " + (err.message || err);
+      }
+    };
+  </script>
+</body>
+</html>

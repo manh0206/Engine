@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: deepchess-trainer
+    env: python
+    plan: free
+
+    buildCommand: |
+      chmod +x stockfish/stockfish-linux-x64 || true
+      pip install --upgrade pip
+      pip install -r requirements.txt
+
+    startCommand: |
+      echo "Launching DeepChess trainer with Flask keep-alive..."
+      python keep_alive.py

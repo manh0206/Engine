@@ -1,0 +1,6 @@
+torch
+numpy
+python-chess
+stockfish
+flask
+requests
